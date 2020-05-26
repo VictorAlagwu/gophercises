@@ -1,0 +1,6 @@
+{
+    "editor.quickSuggestions": true,
+    "[go]": {
+        "editor.formatOnSave": false
+    }
+}
