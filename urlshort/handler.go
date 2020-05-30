@@ -1,10 +1,16 @@
 package urlshort
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-)
 
+	yaml "gopkg.in/yaml.v2"
+)
+type pathURL struct {
+	Path string `yaml:"path" json:"path"`
+	URL string	`yaml:"url" json:"url"`
+}
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
 // paths (keys in the map) to their corresponding URL (values
@@ -21,9 +27,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 			http.Redirect(w, r, i , http.StatusFound)
 			return
 		} 
-		
 		fallback.ServeHTTP(w, r)
-	
 	}
 }
 
@@ -45,5 +49,35 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	// TODO: Implement this...
-	return nil, nil
+	var pathUrls []pathURL
+
+	//Parse YAML file
+	err := yaml.Unmarshal(yml, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	//Put parse yml in map of string [{key: value}]
+	pathMap := buildMap(pathUrls)
+	return MapHandler(pathMap, fallback), nil
+}
+
+// JSONHandler : Returns eqivalent of MapHandler from Json file
+func JSONHandler(j []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	var pathUrls []pathURL
+
+	//Parse Json File
+	err := json.Unmarshal(j, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	pathMap := buildMap(pathUrls)
+	return MapHandler(pathMap, fallback), nil
+}
+
+func buildMap(pathUrls []pathURL) map[string]string {
+	pathsToUrls := make(map[string]string) 
+	for _, p := range pathUrls {
+		pathsToUrls[p.Path] = p.URL
+	}
+	return pathsToUrls
 }
