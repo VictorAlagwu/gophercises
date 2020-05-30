@@ -1,9 +1,0 @@
-{
-    "editor.quickSuggestions": true,
-    "[go]": {
-        "editor.formatOnSave": false, 
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": false
-        },
-    }
-}
