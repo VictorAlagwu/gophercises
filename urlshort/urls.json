@@ -2,9 +2,11 @@
     {
         "path": "/urlshort",
         "url": "https://github.com/gophercises/urlshort"
-    },
-    {
+    },{
         "path": "/urlshort-final",
+        "url": "https://github.com/gophercises/urlshort/tree/solution"
+    },{
+        "path": "/json-link",
         "url": "https://github.com/gophercises/urlshort/tree/solution"
     }
 ]
