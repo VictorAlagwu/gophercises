@@ -49,10 +49,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	// TODO: Implement this...
-	var pathUrls []pathURL
-
-	//Parse YAML file
-	err := yaml.Unmarshal(yml, &pathUrls)
+	pathUrls, err := parseYaml(yml)
 	if err != nil {
 		return nil, err
 	}
@@ -61,12 +58,29 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	return MapHandler(pathMap, fallback), nil
 }
 
+func parseYaml(data []byte) ([]pathURL, error){
+	var pathUrls []pathURL
+	//Parse YAML file
+	err := yaml.Unmarshal(data, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
+
+func parseJSON(data []byte) ([]pathURL, error){
+	var pathUrls []pathURL
+	//Parse YAML file
+	err := json.Unmarshal(data, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
 // JSONHandler : Returns eqivalent of MapHandler from Json file
 func JSONHandler(j []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	var pathUrls []pathURL
-
-	//Parse Json File
-	err := json.Unmarshal(j, &pathUrls)
+	pathUrls, err := parseJSON(j)
+	
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +88,13 @@ func JSONHandler(j []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	return MapHandler(pathMap, fallback), nil
 }
 
+//SQLHandler : Implement
+func SQLHandler(data []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	//Connect to database
+	//Get and Parse data from database
+	// Build Map from parse data
+	return MapHandler([]byte, fallback), nil
+}
 func buildMap(pathUrls []pathURL) map[string]string {
 	pathsToUrls := make(map[string]string) 
 	for _, p := range pathUrls {
