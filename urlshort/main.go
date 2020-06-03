@@ -5,29 +5,38 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"flag"
 
-	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"github.com/joho/godotenv"
+	_ "github.com/jinzhu/gorm/dialects/mysql" //mysql datatype driver
 	"github.com/victoralagwu/gophercises/urlshort/handler"
 	"github.com/victoralagwu/gophercises/urlshort/mysqlservice/models"
+	"github.com/victoralagwu/gophercises/urlshort/mysqlservice/seed"
 )
 
 // Server : Implement
 type Server struct {
 	DB *gorm.DB
-	Router *mux.Router
-
 }
 var pathsToUrls = map[string]string{
 		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
 		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
 }
 
+const (
+	seederFlagValue = false
+	seederUsage     = "Usage: -seeder=true or -seeder=false"
+)
 
 func main() {
+	var err error
 	// Use flags to indicate either to use YAML or JSON
 	// selectedType := flag.String("type", "yaml", "Please select the right file to use, yaml/json")
-	// flag.Parse()
+	useSeeder := flag.Bool("seeder", seederFlagValue, seederUsage)
+	
+	flag.Parse()
 
 	mux := defaultMux()
 	
@@ -41,6 +50,30 @@ func main() {
 	var yamlhandler = createYAMLHandler(fallback)
 	var jsonHandler = createJSONHandler(yamlhandler)
 	fmt.Println("Starting the server on :8085")
+
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error getting env, not coming through %v", err)
+	} else {
+		fmt.Println("We are getting the env values")
+	}
+	var server = Server{};
+
+	server.Initialize(os.Getenv("DB_DRIVER"),
+							os.Getenv("DB_USER"),
+							os.Getenv("DB_PASSWORD"),
+							os.Getenv("DB_PORT"),
+							os.Getenv("DB_HOST"),
+							os.Getenv("DB_NAME"))
+
+	//See data
+	if *useSeeder == true {
+		fmt.Print("\nSeeder loaded")
+		seed.Load(server.DB)
+	} else {
+		fmt.Print("\nSeeder not loaded")
+	}
+
 	http.ListenAndServe(":8085", jsonHandler)
 }
 
@@ -52,11 +85,12 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort,DbHost, Db
 		server.DB, err = gorm.Open(Dbdriver, DBURL)
 
 		if err != nil {
-			fmt.Printf("Cannot connect to %s database", Dbdriver)
+			fmt.Printf("Cannot connect to %s database\n", Dbdriver)
 			log.Fatal("Database Connection error: ", err)
 		} else {
 			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
+		defer server.DB.Close()
 	}
 
 	server.DB.Debug().AutoMigrate(&models.Link{})

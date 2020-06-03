@@ -91,9 +91,14 @@ func JSONHandler(j []byte, fallback http.Handler) (http.HandlerFunc, error) {
 //SQLHandler : Implement
 func SQLHandler(data []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	//Connect to database
+	pathUrls, err := parseJSON(data)
 	//Get and Parse data from database
+	if err != nil {
+		return nil, err
+	}
+	pathMap := buildMap(pathUrls)
 	// Build Map from parse data
-	return MapHandler([]byte, fallback), nil
+	return MapHandler(pathMap, fallback), nil
 }
 func buildMap(pathUrls []pathURL) map[string]string {
 	pathsToUrls := make(map[string]string) 
