@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"flag"
+	"encoding/json"
 
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
@@ -25,9 +26,12 @@ var pathsToUrls = map[string]string{
 		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
 }
 
+var server = Server{};
+
 const (
 	seederFlagValue = false
 	seederUsage     = "Usage: -seeder=true or -seeder=false"
+	port = ":8085"
 )
 
 func main() {
@@ -44,20 +48,13 @@ func main() {
 
 	fallback := urlshort.MapHandler(pathsToUrls, mux)
 
-	// Build the YAMLHandler using the mapHandler as the
-	// // fallback
-
-	var yamlhandler = createYAMLHandler(fallback)
-	var jsonHandler = createJSONHandler(yamlhandler)
-	fmt.Println("Starting the server on :8085")
-
 	err = godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error getting env, not coming through %v", err)
 	} else {
 		fmt.Println("We are getting the env values")
 	}
-	var server = Server{};
+
 
 	server.Initialize(os.Getenv("DB_DRIVER"),
 							os.Getenv("DB_USER"),
@@ -74,24 +71,32 @@ func main() {
 		fmt.Print("\nSeeder not loaded")
 	}
 
-	http.ListenAndServe(":8085", jsonHandler)
+		// Build the YAMLHandler using the mapHandler as the
+	// // fallback
+
+	var yamlhandler = createYAMLHandler(fallback)
+	var jsonHandler = createJSONHandler(yamlhandler)
+	var mysqlHandler = createMYSQLHandler(jsonHandler)
+
+	fmt.Printf("Starting the server on %s\n", port)
+	http.ListenAndServe(port, mysqlHandler)
 }
 
 //Initialize :
 func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort,DbHost, DbName string) {
 	var err error
-	if Dbdriver == "mysql" {
-		DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DbUser, DbPassword, DbHost, DbPort, DbName)
-		server.DB, err = gorm.Open(Dbdriver, DBURL)
 
-		if err != nil {
-			fmt.Printf("Cannot connect to %s database\n", Dbdriver)
-			log.Fatal("Database Connection error: ", err)
-		} else {
-			fmt.Printf("We are connected to the %s database", Dbdriver)
-		}
-		defer server.DB.Close()
+	DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DbUser, DbPassword, DbHost, DbPort, DbName)
+	server.DB, err = gorm.Open(Dbdriver, DBURL)
+
+	if err != nil {
+		fmt.Printf("Cannot connect to %s database\n", Dbdriver)
+		log.Fatal("Database Connection error: ", err)
+	} else {
+		fmt.Printf("We are connected to the %s database", Dbdriver)
 	}
+		// defer server.DB.Close()
+	
 
 	server.DB.Debug().AutoMigrate(&models.Link{})
 }
@@ -120,7 +125,23 @@ func createJSONHandler(fallback http.HandlerFunc) http.HandlerFunc {
 	return jsonHandler
 }
 
-
+func createMYSQLHandler(fallback http.HandlerFunc) http.HandlerFunc {
+	//Get data from database
+	link := models.Link{}
+	links, err := link.FindAll(server.DB)
+	if err != nil {
+		panic(err)
+	}
+	j, err := json.Marshal(links)
+	if err != nil {
+		panic(err)
+	}
+	mySQLHandler, err := urlshort.SQLHandler([]byte(j), fallback)
+	if err != nil {
+		panic(err)
+	}
+	return mySQLHandler
+}
 
 func defaultMux() *http.ServeMux {
 	mux := http.NewServeMux()
@@ -128,6 +149,10 @@ func defaultMux() *http.ServeMux {
 	return mux
 }
 
+func loadHello(w http.ResponseWriter, r *http.Request, data *http.HandlerFunc) {
+	fmt.Fprintln(w, data)
+}
+
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello, world!")
+	fmt.Fprintln(w, "URL Shortner")
 }

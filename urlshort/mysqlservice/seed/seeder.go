@@ -10,11 +10,11 @@ import (
 var links = []models.Link{
 	models.Link{
 		Path: "/google",
-		Url: "google.com",
+		Url: "https://google.com",
 	},
 	models.Link{
 		Path: "/google-api",
-		Url: "google.com/search?search=word",
+		Url: "https://google.com/search?search=word",
 	},
 }
 

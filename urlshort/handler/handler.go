@@ -22,6 +22,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 	//Map through pathsToUrls
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentPath := r.URL.Path
+		fmt.Printf("Links: %s\n", pathsToUrls)
 		if i, status := pathsToUrls[currentPath]; status {
 			fmt.Printf("Req: %s \n", i) 
 			http.Redirect(w, r, i , http.StatusFound)
@@ -91,7 +92,11 @@ func JSONHandler(j []byte, fallback http.Handler) (http.HandlerFunc, error) {
 //SQLHandler : Implement
 func SQLHandler(data []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	//Connect to database
+	fmt.Printf("DATABASE Content: %s\n", data)
+
 	pathUrls, err := parseJSON(data)
+
+	fmt.Printf("Parsed Content: %s\n", pathUrls)
 	//Get and Parse data from database
 	if err != nil {
 		return nil, err
@@ -100,6 +105,14 @@ func SQLHandler(data []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	// Build Map from parse data
 	return MapHandler(pathMap, fallback), nil
 }
+
+func buildMapMySQL(pathUrls []pathURL) map[string]string {
+	pathsToUrls := make(map[string]string) 
+	for _, p := range pathUrls {
+		pathsToUrls[p.Path] = p.URL
+	}
+	return pathsToUrls
+} 
 func buildMap(pathUrls []pathURL) map[string]string {
 	pathsToUrls := make(map[string]string) 
 	for _, p := range pathUrls {
