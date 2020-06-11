@@ -106,13 +106,6 @@ func SQLHandler(data []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	return MapHandler(pathMap, fallback), nil
 }
 
-func buildMapMySQL(pathUrls []pathURL) map[string]string {
-	pathsToUrls := make(map[string]string) 
-	for _, p := range pathUrls {
-		pathsToUrls[p.Path] = p.URL
-	}
-	return pathsToUrls
-} 
 func buildMap(pathUrls []pathURL) map[string]string {
 	pathsToUrls := make(map[string]string) 
 	for _, p := range pathUrls {
