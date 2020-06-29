@@ -1,13 +1,17 @@
 <!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>Choose Your Own Adventure</title>
+</head>
 <html>
-    <body>
-        <h1>View Book</h1>
-    
-        {{range .}}
-        <div>
-            {{ .Title }}
-            {{.Options}}
-        </div>
-        {{end}}
-    </body>
+    <!-- <body>
+        <h1>View {{ .Title }}</h1>
+        {{range .Paragraphs}}
+            <p>{{.}}</p>
+        <ul>
+            {{range .Options}}
+                <li><a href="/{{.Chapter}}">{{.Text}}</a></li>
+            {{end}}
+        </ul>
+    </body> -->
 </html>

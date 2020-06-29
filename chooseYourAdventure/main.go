@@ -4,13 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 
-	// "io/ioutil"
 	"log"
 	"net/http"
 	"os"
 )
+
+//NewHandler :
+func NewHandler(s Story) http.Handler {
+	return handler{s}
+}
+type handler struct {
+	s Story
+}
+
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t, _ := template.ParseFiles("chapter.html")
+	err := t.Execute(w, h.s["intro"])
+	if err != nil {
+		panic(err)
+	}
+}
 //Story : 
 type Story map[string]Chapter 
 
@@ -27,73 +41,44 @@ type Option struct {
 	Chapter  string `json:"arc"`
 }
 
-func startApp(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Choose Your Adventure: " + r.URL.Path[1:])
-}
 
 func main() {
 	//
-	jsonFile, err := createJSONHandler()
+	f, err := os.Open("gopher.json")
+	var story Story
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
+	defer f.Close()
 
+	j := json.NewDecoder(f)
+
+	//Parse JSON file
+	if err := j.Decode(&story); err != nil {
+		// return nil, err
+		panic(err)
+	}
+	
 	//Start HTTP Server
 	fmt.Println("Server Started on Port 8082")
-	http.HandleFunc("/view/", viewHandler)
-	
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		jData, err := json.Marshal(jsonFile)
-		if err != nil {
-			fmt.Println(err)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Println("Server started")
-		w.Write(jData)
-	})
-	log.Fatal(http.ListenAndServe(":8082", nil))
-}
-
-
-
-func loadPage(title string) (Story, error) {
-    // filename := title + ".txt"
-	// body, err := ioutil.ReadFile(filename)
-    // if err != nil {
-    //     return nil, err
-	// }
-	jsonFile, err := createJSONHandler()
-	if err != nil {
-		fmt.Println(err)
-	}
-    return jsonFile, nil
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	s, err := loadPage("ds")
-	if err != nil {
-		fmt.Println(err)
-	}
-	t, _ := template.ParseFiles("index.html")
-	t.Execute(w, s)
+	h := NewHandler(story)
+	log.Fatal(http.ListenAndServe(":8082", h))
 }
 
 func createJSONHandler() (Story, error) {
-	var stories Story
+	var story Story
+	
 	//Open file
 	jsonFile, err := os.Open("gopher.json")
 	if err != nil {
 		fmt.Println(err)
 	}
-	defer jsonFile.Close()
-	j, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		return nil, err
-	}
+	// defer jsonFile.Close()
+	j := json.NewDecoder(jsonFile)
 
 	//Parse JSON file
-	if err := json.Unmarshal(j, &stories); err != nil {
+	if err := j.Decode(&story); err != nil {
 		return nil, err
 	}
-	return stories, nil
+	return story, nil
 }
