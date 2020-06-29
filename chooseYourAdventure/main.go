@@ -10,21 +10,6 @@ import (
 	"os"
 )
 
-//NewHandler :
-func NewHandler(s Story) http.Handler {
-	return handler{s}
-}
-type handler struct {
-	s Story
-}
-
-func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("chapter.html")
-	err := t.Execute(w, h.s["intro"])
-	if err != nil {
-		panic(err)
-	}
-}
 //Story : 
 type Story map[string]Chapter 
 
@@ -41,21 +26,24 @@ type Option struct {
 	Chapter  string `json:"arc"`
 }
 
+//NewHandler :
+func NewHandler(s Story) http.Handler {
+	return handler{s}
+}
+type handler struct {
+	s Story
+}
+
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t, _ := template.ParseFiles("chapter.html")
+	fmt.Println(h.s)
+	t.Execute(w, h.s["intro"])
+}
 
 func main() {
 	//
-	f, err := os.Open("gopher.json")
-	var story Story
+	story, err := createJSONHandler()
 	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	j := json.NewDecoder(f)
-
-	//Parse JSON file
-	if err := j.Decode(&story); err != nil {
-		// return nil, err
 		panic(err)
 	}
 	
@@ -67,13 +55,12 @@ func main() {
 
 func createJSONHandler() (Story, error) {
 	var story Story
-	
 	//Open file
 	jsonFile, err := os.Open("gopher.json")
 	if err != nil {
 		fmt.Println(err)
 	}
-	// defer jsonFile.Close()
+	defer jsonFile.Close()
 	j := json.NewDecoder(jsonFile)
 
 	//Parse JSON file
