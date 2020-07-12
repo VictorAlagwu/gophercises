@@ -31,7 +31,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 		fallback.ServeHTTP(w, r)
 	}
 }
-
+ 
 // YAMLHandler will parse the provided YAML and then return
 // an http.HandlerFunc (which also implements http.Handler)
 // that will attempt to map any paths to their corresponding
